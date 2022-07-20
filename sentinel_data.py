@@ -23,7 +23,7 @@ END = '20211231'
 # Set your specific products e.g. 'S2MSI1C', 'S2MSI2A'
 Product_Type = 'S2MSI2A'
 # Set a limit to the cloud cover percentage (%)
-Cloud_Cover = (0,1)
+Cloud_Cover = (0, 1)
 # Search for all suitable products
 products = api.query(area=AOI, date=(START, END), producttype=Product_Type, cloudcoverpercentage=Cloud_Cover)
 
