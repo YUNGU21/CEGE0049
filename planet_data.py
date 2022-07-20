@@ -1,4 +1,4 @@
-# Referenced from: https://notebook.community/planetlabs/notebooks/jupyter-notebooks/data-api-tutorials/planet_data_api_introduction
+# Referenced from: https://github.com/planetlabs/notebooks
 # Please install the following package in advance
 # pip install requests
 
@@ -130,8 +130,8 @@ request = {
               "type": "DateRangeFilter",
               "field_name": "acquired",          # Date-time at which the imagery was captured
               "config": {
-                 "gte": "2021-06-08T00:00:00Z",  # Greater than or equal to
-                 "lte": "2021-06-09T00:00:00Z"   # Less than or equal to
+                 "gte": "2021-05-29T00:00:00Z",  # Greater than or equal to
+                 "lte": "2021-05-30T00:00:00Z"   # Less than or equal to
               }
            },
            {
@@ -191,37 +191,72 @@ request = {
 # POST request to the quick search API
 QS_res = session.post(QUICK_URL, json=request, params={"_page_size": 250})  # page size maximum is 250
 form(QS_res.json())  # Print quick search results
+
 features = QS_res.json()["features"]
 # Count the number
 print('The total number of images meet the above requirements is:')
 print(len(features))
 
+""""
 # Print the detailed information of the first feature
-feature = features[0]
-form(feature["_permissions"])  # Print the permissions
-assets_url = feature["_links"]["assets"]
-res = session.get(assets_url)
-print(res.json().keys())  # Print the products
+ex = features[0]
+form(ex["_permissions"])  # Print the permissions
+assets_url = ex["_links"]["assets"]
+ex_res = session.get(assets_url)
+print(ex_res.json().keys())  # Print the products
+"""
 
 # Print the detailed information of each feature with a for loop
+ID_list = []
 for feature in features:
     print((feature["id"]))  # Print id
+    ID_list.append((feature["id"]))
     assets_URL = feature["_links"]["assets"]
     assets_res = session.get(assets_URL)
-    sr = assets_res.json()["analytic_sr"]  # Print detailed assets information
+    sr = assets_res.json()["analytic_sr"]
     form(sr)
+
     activation_url = sr["_links"]["activate"]
-    res = session.get(activation_url)
-    form(res.status_code)  # Check status
+    temp_res = session.get(activation_url)
+    form(temp_res.status_code)  # Check status
+
+    # Check active
     asset_active = False
     while asset_active == False:
-        active_res = session.get(assets_url)
-        active = active_res.json()["analytic_sr"]
-        asset_status = active["status"]
+        active_res = session.get(assets_URL)
+        sr_w = active_res.json()["analytic_sr"]
+        asset_status = sr_w["status"]
         if asset_status == 'active':
             asset_active = True
             print("Asset is active and ready to download")
-    form(active)
-    location_url = active["location"]
+    form(sr_w)
+    location_url = sr_w["location"]
     print(location_url)
+
+"""
+# Set up the order URL
+ORDERS_URL = 'https://api.planet.com/compute/ops/orders/v2'
+response = session.get(ORDERS_URL)
+orders = response.json()['orders']
+print(len(orders))
+headers = {'content-type': 'application/json'}
+request = {
+   "name":"order API",
+   "products":[
+      {
+         "item_ids": ID_list,
+         "item_type": "PSOrthoTile",
+         "product_bundle": "analytic_sr"
+      }
+   ],
+}
+def place_order(request):
+    response = session.post(ORDERS_URL, data=json.dumps(request), headers=headers)
+    print(response)
+    order_id = response.json()['id']
+    print(order_id)
+    order_url = ORDERS_URL + '/' + order_id
+    return order_url
+order_url = place_order(request)
+"""
     
